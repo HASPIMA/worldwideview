@@ -54,12 +54,17 @@ export function createPrismaClient() {
             },
         }) as unknown as PrismaClient; // Cast to avoid complex type issues in consuming code for now
     } else {
+        // Prisma 7 requires an adapter. We use better-sqlite3 but hide the import 
+        // from Webpack to prevent native module resolution errors in Next.js edge/rsc environments.
+        const Database = eval('require("better-sqlite3")');
+        const { PrismaBetterSqlite3 } = eval('require("@prisma/adapter-better-sqlite3")');
+        
+        const db = new Database('./data/wwv.db');
+        const adapter = new PrismaBetterSqlite3(db);
+        
         return new PrismaClient({
-            datasources: {
-                db: {
-                    url: process.env.DATABASE_URL || "file:./data/wwv.db"
-                }
-            }
-        });
+            adapter,
+            log: ['error', 'warn']
+        } as any);
     }
 }

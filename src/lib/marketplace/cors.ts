@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 
+
 /** Build CORS headers for the marketplace bridge API. */
 export function corsHeaders(request: Request): Record<string, string> {
-    const origin = request.headers.get("origin") ?? "*";
-    const allowed = origin;
+    const origin = request.headers.get("origin");
 
-    // If origin is not allowlisted, return no CORS headers (browser will block)
-    if (!allowed) return {};
+    // If there is no origin, no CORS headers are needed
+    if (!origin) return {};
 
+    // Explicitly allow ANY origin for the marketplace API routes.
+    // By reflecting the origin, we permit self-hosted marketplaces on any domain/IP
+    // while keeping the door open strictly for these specific endpoints.
     return {
-        "Access-Control-Allow-Origin": allowed,
+        "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-marketplace-ping",
         "Access-Control-Allow-Private-Network": "true",
         "Access-Control-Max-Age": "86400",
     };

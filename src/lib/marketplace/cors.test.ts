@@ -31,7 +31,7 @@ describe("CORS utility", () => {
             expect(headers3["Access-Control-Allow-Origin"]).toBe("http://127.0.0.1:4000");
         });
 
-        it("returns CORS headers for any origin (universal connectivity)", () => {
+        it("returns allowed origin for ANY unknown origin (wide open for marketplace APIs)", () => {
             const headers = corsHeaders(fakeRequest("http://evil.com"));
             expect(headers["Access-Control-Allow-Origin"]).toBe("http://evil.com");
         });

@@ -1,29 +1,34 @@
-// Prisma schema — SQLite for local, PostgreSQL for cloud.
-// Connection URL configured in prisma.config.ts
+// Prisma schema — PostgreSQL for all environments.
+// Local dev: use `npx prisma dev` for a zero-install local PGLite instance.
+// Cloud/Production: set DATABASE_URL to your Supabase/Postgres connection string.
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 model User {
   id             String     @id @default(uuid())
-  email          String     @unique
+  tenantId       String?
+  email          String
   name           String
   hashedPassword String
   role           String     @default("user")
   createdAt      DateTime   @default(now())
   favorites      Favorite[]
+  memberships    WorkspaceMember[]
 
+  @@unique([tenantId, email])
   @@map("users")
 }
 
 model Favorite {
   id         String   @id @default(uuid())
+  tenantId   String?
   entityId   String
   pluginId   String
   label      String
@@ -58,19 +63,55 @@ model Favorite {
 
 model InstalledPlugin {
   id          String   @id @default(uuid())
-  pluginId    String   @unique
+  tenantId    String?
+  pluginId    String
   version     String
   config      String   @default("{}")
   enabled     Boolean  @default(true)
   installedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@unique([tenantId, pluginId])
   @@map("installed_plugins")
 }
 
 model Setting {
-  key   String @id
-  value String
+  id       String  @id @default(uuid())
+  tenantId String?
+  key      String
+  value    String
 
+  @@unique([tenantId, key])
   @@map("settings")
+}
+
+// NEW — Global workspace registry
+model Workspace {
+  id                   String             @id @default(uuid())
+  name                 String
+  subdomain            String             @unique
+  status               String             @default("trialing")
+  plan                 String             @default("basic")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  members              WorkspaceMember[]
+
+  @@map("workspaces")
+}
+
+// NEW — Links global users to workspaces with roles
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        String    @default("member")
+  joinedAt    DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
 }

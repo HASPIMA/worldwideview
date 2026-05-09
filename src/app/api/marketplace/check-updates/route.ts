@@ -10,11 +10,11 @@ export async function GET(request: Request) {
     if (rateLimited) return rateLimited;
 
     try {
-        // Fetch currently installed plugins from local SQLite
+        // Fetch currently installed plugins from PostgreSQL
         const installedPlugins = await getInstalledPlugins();
         
         // Exclude built-in versions, only check genuine semver strings or unverified records.
-        const updatablePlugins = installedPlugins.filter(p => p.version !== "built-in");
+        const updatablePlugins = installedPlugins.filter((p: any) => p.version !== "built-in");
 
         if (updatablePlugins.length === 0) {
             return NextResponse.json({ updates: {} });

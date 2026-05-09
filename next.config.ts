@@ -2,13 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3", "@prisma/client", "prisma"],
+  serverExternalPackages: ["@prisma/client", "prisma"],
   transpilePackages: ["@worldwideview/wwv-plugin-sdk", "resium", "react-player", "satellite.js"],
   allowedDevOrigins: process.env.ALLOWED_DEV_ORIGIN ? [process.env.ALLOWED_DEV_ORIGIN] : undefined,
   experimental: {
     memoryBasedWorkersCount: true,
     cpus: 2,
     optimizePackageImports: ["lucide-react"],
+  },
+  outputFileTracingIncludes: {
+    "/*": ["./scripts/**/*"],
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -18,10 +21,6 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-          { key: "Access-Control-Allow-Headers", value: "*" },
-          { key: "Access-Control-Allow-Private-Network", value: "true" },
           {
             key: "Content-Security-Policy",
             value: [
@@ -56,7 +55,9 @@ const nextConfig: NextConfig = {
   },
 
   outputFileTracingExcludes: {
-    "*": ["./public/cesium/**"],
+    "*": [
+      "./public/cesium/**"
+    ],
   },
   env: {
     CESIUM_BASE_URL: "/cesium",

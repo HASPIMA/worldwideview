@@ -32,7 +32,6 @@ import { isDemo } from "@/core/edition";
 
 import { injectHostGlobals } from "@/core/plugins/hostGlobals";
 import { initLogCatcher } from "@/lib/logCatcher";
-import FortiGuardPlugin from "@worldwideview/wwv-plugin-fortiguard";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
     ssr: false,
@@ -91,14 +90,6 @@ export function AppShell() {
 
 
             await pluginManager.init();
-
-            const fortiGuardPlugin = new FortiGuardPlugin();
-            await pluginManager.registerPlugin(fortiGuardPlugin);
-            const enableFortiGuard = demoDefaultPlugins.has(fortiGuardPlugin.id);
-            initLayer(fortiGuardPlugin.id, enableFortiGuard);
-            if (enableFortiGuard) {
-                await pluginManager.enablePlugin(fortiGuardPlugin.id);
-            }
 
             for (const plugin of pluginRegistry.getAll()) {
                 await pluginManager.registerPlugin(plugin);

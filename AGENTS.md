@@ -136,9 +136,11 @@ Engine push /stream → DataBusSubscriber WsClient router
 
 The data engine is a **content-agnostic runner** (`wwv-data-engine`, public) that discovers and executes seeder scripts from a configurable directory.
 
-- **Local Dev**: Engine runs via Docker Compose on port 5000, reading seeders dynamically from `local-seeders/`.
-- **Production**: Engine container on Coolify, seeders are volume-mounted from the `wwv-seeders` (private) repository.
-- **Split-routing**: `resolveEngineUrl` checks `localhost:5000/manifest` for local seeders, falls back to `dataengine.worldwideview.dev` for cloud-hosted ones.
+- **Local Dev**: Engine runs via Docker Compose on port 5000, reading seeders dynamically from `local-seeders/` (split into `community` and `private` tiers).
+- **Production**: Engine container on Coolify, downloads release bundles from `wwv-seeders-community` and `wwv-seeders-private` on startup and unzips them into `/app/seeders`.
+- **Split-routing**: `resolveEngineUrl` prioritizes the **Local Dev Engine (localhost:5001)** for local testing (following 12-Factor App methodology), falling back to cloud-hosted endpoints.
+- **Dual-Output Engine**: Each seeder automatically exposes a WebSocket stream (`/stream`) and a REST API endpoint (`/api/[plugin-id]`).
+- **Scope Boundary (99% vs 1%)**: The engine handles standard caching and broadcasting (99%). Plugins requiring complex on-demand compute (1%) must host their own custom backend.
 
 ### 4.4 Rendering Pipeline
 
@@ -298,9 +300,10 @@ Configured in `next.config.ts` `headers()`:
 |---|---|
 | `worldwideview` | Main application (this repo) |
 | `wwv-data-engine` | Generic data engine runner (PUBLIC, runs via Docker) |
-| `wwv-seeders` | Proprietary seeder scripts (PRIVATE, volume-mounted in prod) |
+| `wwv-seeders-community` | Open-source community seeders (PUBLIC) |
+| `wwv-seeders-private` | Proprietary seeder scripts (PRIVATE, downloaded in prod) |
 | `worldwideview-marketplace` | Plugin marketplace web app |
-| `worldwideview-plugins` | Published npm plugin packages |
+| `worldwideview-plugins` | Published npm plugin packages (frontend source) |
 | `worldwideview-web` | Marketing / landing page |
 
 ---

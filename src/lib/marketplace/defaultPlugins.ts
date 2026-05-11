@@ -24,4 +24,7 @@ export const DEFAULT_PLUGIN_IDS = [
     "gps-jamming",
     "fortiguard",
     "nz-traffic-cameras",
+    "air-defense",
+    "civil-unrest",
+    "conflict-events",
 ] as const;

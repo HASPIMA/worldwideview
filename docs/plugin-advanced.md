@@ -80,6 +80,7 @@ To distribute your plugin globally:
    npm login
    node ../../packages/wwv-cli/dist/index.js publish
    ```
+   *(Or `npx wwv publish` if installed globally)*
 2. **Submit:** Navigate to `https://marketplace.worldwideview.dev/submit`.
 3. **Register:** Enter your NPM package name. The marketplace automatically scrapes your `package.json` for the required `"worldwideview"` object block (containing your `id`, `icon`, and `category`).
 4. **Review:** Once approved, your plugin's ES Module bundle will be served via CDN to all WorldWideView instances worldwide.

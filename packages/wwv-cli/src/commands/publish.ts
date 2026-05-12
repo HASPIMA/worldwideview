@@ -2,12 +2,14 @@ import { Command } from 'commander';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import prompts from 'prompts';
+import { getConfig, saveConfig } from '../utils/config.js';
 
 export const publishCommand = new Command('publish')
   .description('Publish the plugin to NPM and notify the WWV Marketplace')
   .argument('[pluginName]', 'Name of the plugin to publish (if running from root)')
   .option('--org <orgName>', 'NPM organization to publish to (e.g., your-username)')
-  .action((pluginName, options) => {
+  .action(async (pluginName, options) => {
     console.log('[wwv-cli] Preparing to publish plugin...');
     let cwd = process.cwd();
 
@@ -51,8 +53,47 @@ export const publishCommand = new Command('publish')
       let originalName = pkgContent.name;
       let publishedName = originalName;
 
-      if (options.org) {
-        const orgPrefix = options.org.startsWith('@') ? options.org : `@${options.org}`;
+      // Determine organization
+      let targetOrg = options.org;
+      const config = getConfig();
+
+      if (!targetOrg) {
+        if (config.org) {
+          targetOrg = config.org;
+          console.log(`[wwv-cli] Using default organization from config: @${targetOrg}`);
+        } else {
+          // Fallback to NPM whoami if possible
+          try {
+            const whoami = execSync('npm whoami', { stdio: 'pipe' }).toString().trim();
+            targetOrg = whoami;
+          } catch (e) {
+            // Not logged in or errored, ignore
+          }
+
+          const response = await prompts({
+            type: 'text',
+            name: 'org',
+            message: 'What NPM organization/username do you want to publish under?',
+            initial: targetOrg || '',
+            validate: value => value.length > 0 ? true : 'Organization is required'
+          });
+
+          if (!response.org) {
+            console.log('Publish cancelled.');
+            return;
+          }
+
+          targetOrg = response.org;
+          saveConfig({ org: targetOrg });
+          console.log(`[wwv-cli] Saved @${targetOrg} as your default organization.`);
+        }
+      } else {
+        // Save the explicitly passed org as the new default
+        saveConfig({ org: targetOrg });
+      }
+
+      if (targetOrg) {
+        const orgPrefix = targetOrg.startsWith('@') ? targetOrg : `@${targetOrg}`;
         const baseName = originalName.startsWith('@') ? originalName.split('/')[1] : originalName;
         publishedName = `${orgPrefix}/${baseName}`;
         

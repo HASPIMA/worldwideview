@@ -40,6 +40,15 @@ export interface AnimatableItem {
 /** Global render kickstarter for deeply nested async operations. */
 export let globalRequestRender: () => void = () => { };
 
+export interface PrimitiveCollections {
+    points: PointPrimitiveCollection;
+    billboards: BillboardCollection;
+    labels: LabelCollection;
+    polylines: PolylineCollection;
+}
+
+const collectionsByViewer = new WeakMap<CesiumViewer, PrimitiveCollections>();
+
 /** Initialize primitive collections on the viewer. */
 export function initPrimitiveCollections(viewer: CesiumViewer): void {
     if (!viewer?.scene?.primitives) {
@@ -48,12 +57,19 @@ export function initPrimitiveCollections(viewer: CesiumViewer): void {
     }
     const points = new PointPrimitiveCollection();
     points.blendOption = 2; // TRANSLUCENT
-    (viewer as any)._wwvPoints = viewer.scene.primitives.add(points);
+    viewer.scene.primitives.add(points);
+
     const billboards = new BillboardCollection({ scene: viewer.scene });
     billboards.blendOption = 2; // TRANSLUCENT
-    (viewer as any)._wwvBillboards = viewer.scene.primitives.add(billboards);
-    (viewer as any)._wwvLabels = viewer.scene.primitives.add(new LabelCollection({ scene: viewer.scene }));
-    (viewer as any)._wwvPolylines = viewer.scene.primitives.add(new PolylineCollection());
+    viewer.scene.primitives.add(billboards);
+
+    const labels = new LabelCollection({ scene: viewer.scene });
+    viewer.scene.primitives.add(labels);
+
+    const polylines = new PolylineCollection();
+    viewer.scene.primitives.add(polylines);
+
+    collectionsByViewer.set(viewer, { points, billboards, labels, polylines });
 
     globalRequestRender = () => {
         if (viewer && !viewer.isDestroyed()) {
@@ -62,14 +78,9 @@ export function initPrimitiveCollections(viewer: CesiumViewer): void {
     };
 }
 
-/** Get typed references to the primitive collections. */
-export function getCollections(viewer: CesiumViewer) {
-    return {
-        points: (viewer as any)._wwvPoints as PointPrimitiveCollection,
-        billboards: (viewer as any)._wwvBillboards as BillboardCollection,
-        labels: (viewer as any)._wwvLabels as LabelCollection,
-        polylines: (viewer as any)._wwvPolylines as PolylineCollection,
-    };
+/** Get the primitive collections for a viewer. Returns an empty shape if init hasn't run. */
+export function getCollections(viewer: CesiumViewer): Partial<PrimitiveCollections> {
+    return collectionsByViewer.get(viewer) ?? {};
 }
 
 /** Creates a label primitive for an item (lazy evaluation). */
